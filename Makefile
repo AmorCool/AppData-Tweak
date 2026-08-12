@@ -50,7 +50,8 @@ AppDataPrefs_FILES = AppDataPrefs/ADPreferencesController.m \
 	AppDataPrefs/Classes/ADPrefsHelper.m \
 	AppDataPrefs/Classes/Cells/ADHeaderTableViewCell.m \
 	AppDataPrefs/Classes/Cells/ADSwitchTableViewCell.m \
-	AppDataPrefs/Classes/Controllers/ADSelectListTableViewController.m
+	AppDataPrefs/Classes/Controllers/ADSelectListTableViewController.m \
+	AppData/Classes/Helpers/ADSettings.m
 
 AppDataPrefs_CFLAGS = -fobjc-arc -Wno-deprecated-declarations \
 	-I./AppData/Classes/Helpers \
