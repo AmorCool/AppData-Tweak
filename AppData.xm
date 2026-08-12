@@ -137,7 +137,8 @@
 
 - (id)applicationShortcutItems {
     if ([ADSettings forceTouchMenuEnabled]) {
-        NSMutableArray *newItems = [NSMutableArray arrayWithArray:%orig?:@[]];
+        id _origItems = %orig;
+        NSMutableArray *newItems = [NSMutableArray arrayWithArray:(_origItems != nil ? _origItems : @[])];
         SBSApplicationShortcutItem *shortcutItem = [ADHelper applicationShortcutItem];
         if (shortcutItem) {
             [newItems insertObject:shortcutItem atIndex:0];
