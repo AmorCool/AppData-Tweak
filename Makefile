@@ -26,8 +26,11 @@ AppData_FILES = AppData.xm \
 	AppData/Classes/Tools/ADTerminator.m \
 	AppData/Vendors/NRFileManager/NRFileManager.m
 
-AppData_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -I./AppData -I./AppData/Classes/Helpers -include AppData/AppData-Prefix.pch
-AppData_LDFLAGS = -lellekit -framework CoreLocation
+AppData_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -I./include -I./AppData -I./AppData/Classes/Helpers -include AppData/AppData-Prefix.pch
+# ElleKit (libellekit) is loaded as the injection substrate at runtime and provides
+# MSHookMessageEx / MSHookFunction, so we link with dynamic_lookup instead of
+# requiring a vendored libellekit at build time. substrate.h is vendored at ./include.
+AppData_LDFLAGS = -Wl,-undefined,dynamic_lookup -framework CoreLocation
 AppData_INSTALL_PATH = /Library/MobileSubstrate/DynamicLibraries
 
 # ---------- Preference Bundle (loaded by PreferenceLoader) ----------

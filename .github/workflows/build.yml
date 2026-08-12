@@ -12,58 +12,57 @@ permissions:
 jobs:
   build:
     runs-on: macos-latest
+    env:
+      THEOS: ${{ github.workspace }}/theos
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install build tools (dpkg / ldid / fakeroot)
+      - name: Install build tools (ldid / dpkg / make)
         run: |
-          brew install dpkg ldid fakeroot || true
-          which dpkg ldid
+          # ldid = fake-sign the dylib; dpkg = package the .deb;
+          # GNU make >= 4.x is REQUIRED by Theos (macOS ships make 3.81).
+          brew install ldid dpkg fakeroot make || true
+          echo "PATH=$(brew --prefix make)/libexec/gnubin:$PATH" >> "$GITHUB_ENV"
+          command -v ldid && ldid -V 2>/dev/null || echo "WARN: ldid missing"
+          command -v make && make --version | head -1
 
       - name: Set up Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git "$THEOS"
-          echo "THEOS=$THEOS" >> "$GITHUB_ENV"
-        env:
-          THEOS: ${{ github.workspace }}/theos
 
       - name: Download iOS SDK (theos/sdks)
         run: |
           mkdir -p "$THEOS/sdks" /tmp/sdk
-          gh release download -R theos/sdks --dir /tmp/sdk 2>/dev/null || true
-          SDK=$(ls /tmp/sdk/iPhoneOS*.sdk.tar.xz 2>/dev/null | sort -V | tail -1)
-          if [ -n "$SDK" ]; then
-            echo "Extracting SDK: $SDK"
-            tar -xf "$SDK" -C "$THEOS/sdks"
+          # Highest SDK shipped by theos/sdks is iPhoneOS16.5; we build against it
+          # (AppData uses runtime class lookup, so targeting iOS 26 is fine).
+          gh release download -R theos/sdks --pattern 'iPhoneOS16.5.sdk.tar.xz' --dir /tmp/sdk 2>/dev/null \
+            || curl -fsSL -o /tmp/sdk/iPhoneOS16.5.sdk.tar.xz https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS16.5.sdk.tar.xz
+          SDK=$(ls /tmp/sdk/iPhoneOS16.5.sdk.tar.xz 2>/dev/null | head -1)
+          if [ -z "$SDK" ]; then
+            echo "::error::Could not obtain iPhoneOS16.5.sdk"; exit 1
           fi
-          ls -1 "$THEOS/sdks" || true
+          echo "Extracting $SDK"
+          tar -xf "$SDK" -C "$THEOS/sdks"
+          ls -1 "$THEOS/sdks"
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Install ElleKit (linking headers + lib)
+      - name: Verify vendored headers (substrate.h)
         run: |
-          mkdir -p "$THEOS/include" "$THEOS/lib" /tmp/elle
-          # 1) Headers straight from the ElleKit repo (most reliable)
-          curl -fsSL https://raw.githubusercontent.com/ellekit/ellekit/master/include/substrate.h -o "$THEOS/include/substrate.h" || true
-          curl -fsSL https://raw.githubusercontent.com/ellekit/ellekit/master/include/ellekit.h   -o "$THEOS/include/ellekit.h"   || true
-          # 2) Prebuilt lib from the latest release (dylib and/or tbd)
-          gh release download -R ellekit/ellekit --dir /tmp/elle 2>/dev/null || true
-          cp -f /tmp/elle/substrate.h  "$THEOS/include/" 2>/dev/null || true
-          cp -f /tmp/elle/ellekit.h    "$THEOS/include/" 2>/dev/null || true
-          cp -f /tmp/elle/libellekit.dylib "$THEOS/lib/" 2>/dev/null || true
-          cp -f /tmp/elle/libellekit.tbd   "$THEOS/lib/" 2>/dev/null || true
-          echo "--- theos/include ---"; ls -1 "$THEOS/include" | grep -i elle
-          echo "--- theos/lib ---";   ls -1 "$THEOS/lib"   | grep -i elle
-        env:
-          GH_TOKEN: ${{ github.token }}
+          # substrate.h is committed at ./include so the build needs no network.
+          ls -1 include
+          test -f include/substrate.h && echo "substrate.h present" || { echo "::error::include/substrate.h missing"; exit 1; }
 
       - name: Build package (rootless)
         run: |
-          export PATH="$THEOS/bin:$PATH"
+          export PATH="$(brew --prefix make)/libexec/gnubin:$THEOS/bin:$PATH"
           make package FINALPACKAGE=1
+        env:
+          # ElleKit is the injection substrate; symbols resolve at runtime.
+          THEOS_PACKAGE_SCHEME: rootless
 
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4
