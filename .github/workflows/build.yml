@@ -24,7 +24,9 @@ jobs:
         run: |
           # ldid = fake-sign the dylib; dpkg = package the .deb;
           # GNU make >= 4.x is REQUIRED by Theos (macOS ships make 3.81).
-          brew install ldid dpkg fakeroot make || true
+          # fakeroot is intentionally NOT installed: the brew bottle is arm64
+          # and crashes on the arm64e runner, and rootless debs don't need it.
+          brew install ldid dpkg make || true
           echo "PATH=$(brew --prefix make)/libexec/gnubin:$PATH" >> "$GITHUB_ENV"
           command -v ldid && ldid -V 2>/dev/null || echo "WARN: ldid missing"
           command -v make && make --version | head -1
@@ -63,6 +65,9 @@ jobs:
         env:
           # ElleKit is the injection substrate; symbols resolve at runtime.
           THEOS_PACKAGE_SCHEME: rootless
+          # Skip fakeroot: not installed (arm64/arm64e mismatch on macOS runner)
+          # and unnecessary for rootless debs installed under /var/jb.
+          THEOS_NO_FAKEROOT: 1
 
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4
