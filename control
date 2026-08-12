@@ -1,6 +1,6 @@
 Package: com.fouadraheb.appdata
 Name: AppData
-Version: 1.5.1
+Version: 1.5.2
 Architecture: iphoneos-arm64
 Description: View & manage app data from the Home Screen (Rootless, iOS 26)
 Section: Tweaks

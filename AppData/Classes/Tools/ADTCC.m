@@ -36,7 +36,7 @@ static void initializeFunctions() {
         TCCAccessResetForBundle_Ptr = dlsym(handle, "TCCAccessResetForBundle");
         TCCAccessCopyInformationForBundle_Ptr = dlsym(handle, "TCCAccessCopyInformationForBundle");
         // kTCCServiceAll is a global NSString * in TCC; use the real symbol instead of a guessed literal.
-        NSString **realServiceAll = (NSString **)dlsym(handle, "kTCCServiceAll");
+        __unsafe_unretained NSString **realServiceAll = (__unsafe_unretained NSString **)dlsym(handle, "kTCCServiceAll");
         if (realServiceAll) {
             kTCCServiceAll = *realServiceAll;
         }
