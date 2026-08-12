@@ -1,0 +1,99 @@
+name: Build AppData (Rootless, iOS 26)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install build tools (dpkg / ldid / fakeroot)
+        run: |
+          brew install dpkg ldid fakeroot || true
+          which dpkg ldid
+
+      - name: Set up Theos
+        run: |
+          git clone --recursive https://github.com/theos/theos.git "$THEOS"
+          echo "THEOS=$THEOS" >> "$GITHUB_ENV"
+        env:
+          THEOS: ${{ github.workspace }}/theos
+
+      - name: Download iOS SDK (theos/sdks)
+        run: |
+          mkdir -p "$THEOS/sdks" /tmp/sdk
+          gh release download -R theos/sdks --dir /tmp/sdk 2>/dev/null || true
+          SDK=$(ls /tmp/sdk/iPhoneOS*.sdk.tar.xz 2>/dev/null | sort -V | tail -1)
+          if [ -n "$SDK" ]; then
+            echo "Extracting SDK: $SDK"
+            tar -xf "$SDK" -C "$THEOS/sdks"
+          fi
+          ls -1 "$THEOS/sdks" || true
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Install ElleKit (linking headers + lib)
+        run: |
+          mkdir -p "$THEOS/include" "$THEOS/lib" /tmp/elle
+          # 1) Headers straight from the ElleKit repo (most reliable)
+          curl -fsSL https://raw.githubusercontent.com/ellekit/ellekit/master/include/substrate.h -o "$THEOS/include/substrate.h" || true
+          curl -fsSL https://raw.githubusercontent.com/ellekit/ellekit/master/include/ellekit.h   -o "$THEOS/include/ellekit.h"   || true
+          # 2) Prebuilt lib from the latest release (dylib and/or tbd)
+          gh release download -R ellekit/ellekit --dir /tmp/elle 2>/dev/null || true
+          cp -f /tmp/elle/substrate.h  "$THEOS/include/" 2>/dev/null || true
+          cp -f /tmp/elle/ellekit.h    "$THEOS/include/" 2>/dev/null || true
+          cp -f /tmp/elle/libellekit.dylib "$THEOS/lib/" 2>/dev/null || true
+          cp -f /tmp/elle/libellekit.tbd   "$THEOS/lib/" 2>/dev/null || true
+          echo "--- theos/include ---"; ls -1 "$THEOS/include" | grep -i elle
+          echo "--- theos/lib ---";   ls -1 "$THEOS/lib"   | grep -i elle
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Build package (rootless)
+        run: |
+          export PATH="$THEOS/bin:$PATH"
+          make package FINALPACKAGE=1
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: appdata-deb
+          path: packages/*.deb
+          if-no-files-found: error
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          PREV=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          if [ -n "$PREV" ]; then
+            LOG=$(git log --pretty=format:"- %s (%h)" "$PREV"..HEAD)
+          else
+            LOG=$(git log --pretty=format:"- %s (%h)" -n 20)
+          fi
+          {
+            echo "Automated rootless build for iOS 26.0.1 (Dopamine 3 + ElleKit)."
+            echo ""
+            echo "## Changes"
+            echo "$LOG"
+          } > RELEASE_NOTES.md
+          cat RELEASE_NOTES.md
+
+      - name: Publish Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: packages/*.deb
+          body_path: RELEASE_NOTES.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
