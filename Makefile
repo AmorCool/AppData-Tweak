@@ -26,7 +26,18 @@ AppData_FILES = AppData.xm \
 	AppData/Classes/Tools/ADTerminator.m \
 	AppData/Vendors/NRFileManager/NRFileManager.m
 
-AppData_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -I./include -I./AppData -I./AppData/Classes/Helpers -include AppData/AppData-Prefix.pch
+AppData_CFLAGS = -fobjc-arc -Wno-deprecated-declarations \
+	-I./include \
+	-I./AppData \
+	-I./AppData/Classes/Controller \
+	-I./AppData/Classes/Controller/Cells \
+	-I./AppData/Classes/Controller/DataSource \
+	-I./AppData/Classes/Helpers \
+	-I./AppData/Classes/Model \
+	-I./AppData/Classes/Presentation \
+	-I./AppData/Classes/Tools \
+	-I./AppData/Vendors/NRFileManager \
+	-include AppData/AppData-Prefix.pch
 # ElleKit (libellekit) is loaded as the injection substrate at runtime and provides
 # MSHookMessageEx / MSHookFunction, so we link with dynamic_lookup instead of
 # requiring a vendored libellekit at build time. substrate.h is vendored at ./include.
@@ -41,7 +52,12 @@ AppDataPrefs_FILES = AppDataPrefs/ADPreferencesController.m \
 	AppDataPrefs/Classes/Cells/ADSwitchTableViewCell.m \
 	AppDataPrefs/Classes/Controllers/ADSelectListTableViewController.m
 
-AppDataPrefs_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -I./AppData/Classes/Helpers -I./AppDataPrefs
+AppDataPrefs_CFLAGS = -fobjc-arc -Wno-deprecated-declarations \
+	-I./AppData/Classes/Helpers \
+	-I./AppDataPrefs \
+	-I./AppDataPrefs/Classes \
+	-I./AppDataPrefs/Classes/Cells \
+	-I./AppDataPrefs/Classes/Controllers
 AppDataPrefs_LDFLAGS = -F./Frameworks -framework Preferences
 AppDataPrefs_INSTALL_PATH = /Library/PreferenceBundles
 
