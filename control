@@ -1,11 +1,10 @@
 Package: com.fouadraheb.appdata
 Name: AppData
-Version: 1.4.7
+Version: 1.4.8
 Architecture: iphoneos-arm64
 Description: View & manage app data from the Home Screen (Rootless, iOS 26)
 Section: Tweaks
-Depends: firmware (>= 26.0), ellekit (>= 2.0), preferenceloader (>= 2.2.8)
-Conflicts:
+Depends: firmware (>= 26.0), ellekit, preferenceloader
 Maintainer: AmorCool
 Author: Fouad Raheb
 Icon: file:///var/jb/Library/PreferenceBundles/AppDataPrefs.bundle/AppData@3x.png
