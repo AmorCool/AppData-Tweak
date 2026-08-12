@@ -74,8 +74,8 @@
         vendable = self.appProxy.isAppStoreVendable;
     } else if ([self.appProxy respondsToSelector:@selector(isAppStore)]) {
         vendable = self.appProxy.isAppStore;
-    } else if ([self.appProxy respondsToSelector:@selector(appStoreVendable)]) {
-        vendable = [self.appProxy appStoreVendable];
+    } else if ([self.appProxy respondsToSelector:@selector(isAppStoreVendable)]) {
+        vendable = [self.appProxy isAppStoreVendable];
     } else if ([self.appProxy respondsToSelector:@selector(isDeletable)]) {
         vendable = self.appProxy.isDeletable;
     }
