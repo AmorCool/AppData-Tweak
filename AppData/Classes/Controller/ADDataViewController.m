@@ -40,6 +40,19 @@
 
 @implementation ADDataViewController
 
+#pragma mark - Helpers
+
++ (SBIconView *)nearestSBIconViewForView:(UIView *)view {
+    UIView *candidate = view;
+    while (candidate) {
+        if ([candidate isKindOfClass:NSClassFromString(@"SBIconView")] && [candidate respondsToSelector:@selector(icon)]) {
+            return (SBIconView *)candidate;
+        }
+        candidate = candidate.superview;
+    }
+    return nil;
+}
+
 - (instancetype)initWithAppData:(ADAppData *)data {
     if (self = [super init]) {
         ADDataPresentationConfiguration *config = [[ADDataPresentationConfiguration alloc] init];
@@ -68,7 +81,15 @@
         [self showAlertWithTitle:@"AppData" message:[NSString stringWithFormat:@"Could not fetch app data.\n\nError: Empty icon view."]];
         return;
     }
-    
+
+    // iOS 26 wraps the icon view in SBHTouchPassThroughView. Walk up the hierarchy
+    // until we find the real SBIconView instead of assuming the first superview is it.
+    iconView = [self nearestSBIconViewForView:iconView];
+    if (!iconView) {
+        [self showAlertWithTitle:@"AppData" message:@"Could not fetch app data.\n\nError: Could not find SBIconView in hierarchy."];
+        return;
+    }
+
     // Find Icon Image View
     SBIconImageView *_iconImageView = nil;
     if ([iconView respondsToSelector:@selector(_iconImageView)]) {
@@ -95,10 +116,14 @@
 #pragma mark - Used from Swipe Up
 
 + (void)presentControllerFromSBIconImageView:(SBIconImageView *)iconImageView fromContextMenu:(BOOL)contextMenu {
-    SBIconView *iconView = (SBIconView *)[iconImageView superview];
-    if (![iconView respondsToSelector:@selector(icon)]) {
-        NSLog(@"iconView: %@",iconView);
-        iconView = (SBIconView *)[iconView superview];
+    // iOS 26 may insert SBHTouchPassThroughView between SBIconImageView and SBIconView,
+    // so only checking one or two superviews is no longer sufficient.
+    SBIconView *iconView = [self nearestSBIconViewForView:iconImageView];
+    if (!iconView) {
+        NSLog(@"iconImageView: %@",iconImageView);
+        NSLog(@"iconImageView superview chain could not resolve to SBIconView.");
+        [self showAlertWithTitle:@"AppData" message:@"Could not fetch app data.\n\nError: Could not find SBIconView in hierarchy."];
+        return;
     }
     [self presentControllerFromSBIconImageView:iconImageView iconView:iconView fromContextMenu:contextMenu];
 }
