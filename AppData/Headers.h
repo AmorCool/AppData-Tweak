@@ -54,6 +54,7 @@
 @property (nonatomic,readonly) NSNumber * dynamicDiskUsage;
 @property (nonatomic,readonly) NSNumber * ODRDiskUsage;
 @property (getter=isAppStoreVendable,nonatomic,readonly) BOOL appStoreVendable;
+@property (nonatomic,readonly) BOOL isAppStore;
 @property (getter=isDeletable,nonatomic,readonly) BOOL deletable;
 
 // iOS 13

@@ -104,9 +104,9 @@
 
 + (NSString *)titleForAppearanceStyle:(ADAppearanceStyle)style {
     switch (style) {
-        case ADAppearanceStyleDark: return @"Dark";
-        case ADAppearanceStyleLight: return @"Light";
-        case ADAppearanceStyleAutomatic: return @"Automatic";
+        case ADAppearanceStyleDark: return @"深色";
+        case ADAppearanceStyleLight: return @"浅色";
+        case ADAppearanceStyleAutomatic: return @"自动";
         default: return @"N/A";
     }
 }

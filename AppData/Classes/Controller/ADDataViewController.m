@@ -78,7 +78,7 @@
 
 + (void)presentControllerFromSBIconView:(SBIconView *)iconView fromContextMenu:(BOOL)contextMenu {
     if (!iconView) {
-        [self showAlertWithTitle:@"AppData" message:[NSString stringWithFormat:@"Could not fetch app data.\n\nError: Empty icon view."]];
+        [self showAlertWithTitle:@"AppData" message:[NSString stringWithFormat:@"无法获取应用数据。\n\n错误：图标视图为空。"]];
         return;
     }
 
@@ -86,7 +86,7 @@
     // until we find the real SBIconView instead of assuming the first superview is it.
     iconView = [self nearestSBIconViewForView:iconView];
     if (!iconView) {
-        [self showAlertWithTitle:@"AppData" message:@"Could not fetch app data.\n\nError: Could not find SBIconView in hierarchy."];
+        [self showAlertWithTitle:@"AppData" message:@"无法获取应用数据。\n\n错误：在视图层级中找不到 SBIconView。"];
         return;
     }
 
@@ -107,7 +107,7 @@
     }
     
     if (!_iconImageView) {
-        [self showAlertWithTitle:@"AppData" message:[NSString stringWithFormat:@"Could not fetch app data.\n\nError: could not find icon image view."]];
+        [self showAlertWithTitle:@"AppData" message:[NSString stringWithFormat:@"无法获取应用数据。\n\n错误：找不到图标图片视图。"]];
         return;
     }
     [self presentControllerFromSBIconImageView:_iconImageView iconView:iconView fromContextMenu:contextMenu];
@@ -122,7 +122,7 @@
     if (!iconView) {
         NSLog(@"iconImageView: %@",iconImageView);
         NSLog(@"iconImageView superview chain could not resolve to SBIconView.");
-        [self showAlertWithTitle:@"AppData" message:@"Could not fetch app data.\n\nError: Could not find SBIconView in hierarchy."];
+        [self showAlertWithTitle:@"AppData" message:@"无法获取应用数据。\n\n错误：在视图层级中找不到 SBIconView。"];
         return;
     }
     [self presentControllerFromSBIconImageView:iconImageView iconView:iconView fromContextMenu:contextMenu];
@@ -172,7 +172,7 @@
         [self showAlertFromViewController:rootController
                                     title:@"AppData"
                                   message:[NSString stringWithFormat:@"Could not fetch app data.\n\n%@ is not a valid icon class.",[iconView class]]
-                              cancelTitle:@"Okay"];
+                              cancelTitle:@"好的"];
     }
 }
 
@@ -238,10 +238,10 @@
             self.versionLabel.text = self.appData.version;
         }
     } else {
-        [self.nameLabel setTitle:@"Not an Application" forState:UIControlStateNormal];
+        [self.nameLabel setTitle:@"不是应用" forState:UIControlStateNormal];
         [self.nameLabel setEnabled:NO];
         
-        [self.identifierLabel setTitle:@"No Bundle Identifier" forState:UIControlStateNormal];
+        [self.identifierLabel setTitle:@"无 Bundle ID" forState:UIControlStateNormal];
         [self.identifierLabel setEnabled:NO];
         
         [self.versionLabel setText:@"—"];
@@ -437,7 +437,7 @@
         NSString *currentTitle = self.identifierLabel.titleLabel.text;
         [[UIPasteboard generalPasteboard] setString:currentTitle?:@""];
         
-        [self.identifierLabel setTitle:@"Copied to clipboard" forState:UIControlStateNormal];
+        [self.identifierLabel setTitle:@"已复制到剪贴板" forState:UIControlStateNormal];
         
         [[UINotificationFeedbackGenerator new] notificationOccurred:UINotificationFeedbackTypeSuccess];
         
@@ -459,23 +459,23 @@
 }
 
 - (void)showCustomIconNameInterface {
-    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Rename" message:@"Enter an app icon name" preferredStyle:UIAlertControllerStyleAlert];
-    [alertController addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"重命名" message:@"输入应用图标名称" preferredStyle:UIAlertControllerStyleAlert];
+    [alertController addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
         if (self.dockDismissed && IS_IPAD) [self.class presentFloatingDockIfNeeded];
     }]];
-    [alertController addAction:[UIAlertAction actionWithTitle:@"Change" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+    [alertController addAction:[UIAlertAction actionWithTitle:@"修改" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
         [self.appData setCustomIconName:alertController.textFields.firstObject.text];
         [self.nameLabel setTitle:self.appData.name forState:UIControlStateNormal];
         if (self.dockDismissed && IS_IPAD) [self.class presentFloatingDockIfNeeded];
     }]];
-    [alertController addAction:[UIAlertAction actionWithTitle:@"Reset" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+    [alertController addAction:[UIAlertAction actionWithTitle:@"重置" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
         [self.appData setCustomIconName:nil];
         [self.nameLabel setTitle:self.appData.name forState:UIControlStateNormal];
         if (self.dockDismissed && IS_IPAD) [self.class presentFloatingDockIfNeeded];
     }]];
     [alertController addTextFieldWithConfigurationHandler:^(UITextField *textField) {
         textField.clearButtonMode = UITextFieldViewModeAlways;
-        textField.placeholder = @"Icon Name";
+        textField.placeholder = @"图标名称";
         textField.text = self.nameLabel.titleLabel.text;
     }];
     if (IS_IPAD) {
@@ -564,7 +564,7 @@
 #pragma mark - Alert Helpers
 
 + (void)showAlertWithTitle:(NSString *)title message:(NSString *)message {
-    [self showAlertFromViewController:nil title:title message:message cancelTitle:@"Okay"];
+    [self showAlertFromViewController:nil title:title message:message cancelTitle:@"好的"];
 }
 
 + (void)showAlertFromViewController:(UIViewController *)viewController title:(NSString *)title message:(NSString *)message cancelTitle:(NSString *)cancelTitle {

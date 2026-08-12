@@ -9,7 +9,7 @@
 #import <dlfcn.h>
 #import "ADTCC.h"
 
-NSString *const kTCCServiceAll = @"kTCCServiceAll";
+NSString *kTCCServiceAll = @"kTCCServiceAll";
 
 static int (*TCCAccessResetForBundle_Ptr) (NSString *, CFBundleRef);
 static CFArrayRef (*TCCAccessCopyInformationForBundle_Ptr)(CFBundleRef);
@@ -35,6 +35,11 @@ static void initializeFunctions() {
     if (handle) {
         TCCAccessResetForBundle_Ptr = dlsym(handle, "TCCAccessResetForBundle");
         TCCAccessCopyInformationForBundle_Ptr = dlsym(handle, "TCCAccessCopyInformationForBundle");
+        // kTCCServiceAll is a global NSString * in TCC; use the real symbol instead of a guessed literal.
+        NSString **realServiceAll = (NSString **)dlsym(handle, "kTCCServiceAll");
+        if (realServiceAll) {
+            kTCCServiceAll = *realServiceAll;
+        }
         dlclose(handle);
     }
 }

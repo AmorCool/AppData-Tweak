@@ -41,8 +41,8 @@
         NSURL *ifileURL = [NSURL URLWithString:[@"ifile://file://" stringByAppendingString:path]];
         [[UIApplication sharedApplication] openURL:ifileURL options:@{} completionHandler:nil];
     } else {
-        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"AppData" message:@"Install Filza app to open the selected directory" preferredStyle:UIAlertControllerStyleAlert];
-        [alertController addAction:[UIAlertAction actionWithTitle:@"Okay" style:UIAlertActionStyleDefault handler:nil]];
+        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"AppData" message:@"请安装 Filza 以打开所选目录" preferredStyle:UIAlertControllerStyleAlert];
+        [alertController addAction:[UIAlertAction actionWithTitle:@"好的" style:UIAlertActionStyleDefault handler:nil]];
         [controller presentViewController:alertController animated:YES completion:nil];
     }
 }

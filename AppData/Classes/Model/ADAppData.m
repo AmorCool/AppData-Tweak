@@ -11,6 +11,7 @@
 #import "ADTerminator.h"
 #import <dlfcn.h>
 #import <Foundation/Foundation.h>
+#import <objc/runtime.h>
 
 
 @interface ADAppData ()
@@ -66,9 +67,19 @@
     }
     
     // Vendable
+    // iOS 26 renamed/removed isAppStoreVendable; try several known selectors and
+    // fall back to YES so user-installed apps are not incorrectly disabled.
+    BOOL vendable = YES;
     if ([self.appProxy respondsToSelector:@selector(isAppStoreVendable)]) {
-        self.appStoreVendable = self.appProxy.isAppStoreVendable;
+        vendable = self.appProxy.isAppStoreVendable;
+    } else if ([self.appProxy respondsToSelector:@selector(isAppStore)]) {
+        vendable = self.appProxy.isAppStore;
+    } else if ([self.appProxy respondsToSelector:@selector(appStoreVendable)]) {
+        vendable = [self.appProxy appStoreVendable];
+    } else if ([self.appProxy respondsToSelector:@selector(isDeletable)]) {
+        vendable = self.appProxy.isDeletable;
     }
+    self.appStoreVendable = vendable;
     
     // Bundle URL
     if ([self.appProxy respondsToSelector:@selector(bundleURL)]) {
@@ -295,9 +306,11 @@
         TCCAccessResetForBundle(kTCCServiceAll, bundle);
         CFRelease(bundle);
     }
-    
+
     // Reset location permission
-    [CLLocationManager setAuthorizationStatusByType:kCLAuthorizationStatusNotDetermined forBundleIdentifier:self.bundleIdentifier];
+    if ([CLLocationManager respondsToSelector:@selector(setAuthorizationStatusByType:forBundleIdentifier:)]) {
+        [CLLocationManager setAuthorizationStatusByType:kCLAuthorizationStatusNotDetermined forBundleIdentifier:self.bundleIdentifier];
+    }
 }
 
 #pragma mark - Reset App
@@ -391,16 +404,28 @@
 
 - (void)offloadAppWithCompletion:(void(^)())completion{
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        if (@available(iOS 12.0, *)){
-            [NSClassFromString(@"IXAppInstallCoordinator") demoteAppToPlaceholderWithBundleID:self.bundleIdentifier forReason:1 waitForDeletion:YES completion:^{
+        Class IXCoordinator = NSClassFromString(@"IXAppInstallCoordinator");
+        SEL modernSEL = @selector(demoteAppToPlaceholderWithBundleID:forReason:waitForDeletion:completion:);
+        SEL legacySEL = @selector(demoteAppToPlaceholderWithBundleID:forReason:error:);
+        if ([IXCoordinator respondsToSelector:modernSEL]) {
+            typedef void (^ADOffloadCompletion)(void);
+            typedef void (*ADOffloadModernFunc)(id, SEL, NSString *, NSInteger, BOOL, ADOffloadCompletion);
+            ADOffloadModernFunc func = (ADOffloadModernFunc)[IXCoordinator methodForSelector:modernSEL];
+            func(IXCoordinator, modernSEL, self.bundleIdentifier, 1, YES, ^{
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    completion();
+                    if (completion) completion();
                 });
-            }];
-        } else {
-            [NSClassFromString(@"IXAppInstallCoordinator") demoteAppToPlaceholderWithBundleID:self.bundleIdentifier forReason:1 error:nil];
+            });
+        } else if ([IXCoordinator respondsToSelector:legacySEL]) {
+            typedef void (*ADOffloadLegacyFunc)(id, SEL, NSString *, NSInteger, NSError *);
+            ADOffloadLegacyFunc func = (ADOffloadLegacyFunc)[IXCoordinator methodForSelector:legacySEL];
+            func(IXCoordinator, legacySEL, self.bundleIdentifier, 1, nil);
             dispatch_async(dispatch_get_main_queue(), ^{
-                completion();
+                if (completion) completion();
+            });
+        } else {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (completion) completion();
             });
         }
     });

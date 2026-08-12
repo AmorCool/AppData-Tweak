@@ -8,7 +8,7 @@
 #ifndef ADTCC_h
 #define ADTCC_h
 
-FOUNDATION_EXTERN NSString *const kTCCServiceAll;
+FOUNDATION_EXTERN NSString *kTCCServiceAll;
 
 FOUNDATION_EXTERN int TCCAccessResetForBundle(NSString *service, CFBundleRef bundle);
 
